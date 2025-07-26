@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // -- header --
+        // -- Header --
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -60,7 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-
                   Text(
                     'Hello Auos',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -194,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             separatorBuilder: (context, idx) => const SizedBox(height: 10),
-            itemCount: 10,
+            itemCount: 0,
           ),
         ),
         const SizedBox(height: 100),

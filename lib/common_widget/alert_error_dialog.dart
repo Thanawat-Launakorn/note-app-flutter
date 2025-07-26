@@ -11,6 +11,18 @@ class AlertErrorDialog extends StatelessWidget {
   final BuildContext context;
   final String message;
   final String responseStatus;
+
+  static show(BuildContext context, String responseStatus, String message) =>
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertErrorDialog(
+              responseStatus: responseStatus,
+              context: context,
+              message: message,
+            ),
+      );
+
   @override
   Widget build(BuildContext context) {
     String manageTitle(String responseStatus) {

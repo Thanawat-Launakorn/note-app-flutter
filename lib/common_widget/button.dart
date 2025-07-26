@@ -9,6 +9,7 @@ class Button extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.margin,
+    this.disable = false,
     this.type = ButtonType.success,
     super.key,
   });
@@ -18,24 +19,27 @@ class Button extends StatelessWidget {
   final Icon? suffixIcon;
   final EdgeInsetsGeometry? margin;
   final ButtonType? type;
+  final bool disable;
 
-
-  Color manageButtonColor() {
-    switch(type) {
+  Color _getBaseButtonColor() {
+    switch (type) {
       case ButtonType.success:
         return Colors.blue.shade600;
-        
+
       case ButtonType.error:
         return Colors.red.shade600;
 
       default:
         return Colors.white;
-
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color buttonColor = disable ? Colors.grey : _getBaseButtonColor();
+
+    final VoidCallback? _onTap = disable ? null : onTap;
+
     return Container(
       height: 50,
       margin: margin,
@@ -56,9 +60,9 @@ class Button extends StatelessWidget {
       child: Material(
         clipBehavior: Clip.hardEdge,
         borderRadius: BorderRadius.circular(12),
-        color: manageButtonColor(),
+        color: buttonColor,
         child: InkWell(
-          onTap: onTap,
+          onTap: _onTap,
           child: Row(
             children: [
               Container(

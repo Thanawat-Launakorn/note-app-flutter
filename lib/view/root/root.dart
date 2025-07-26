@@ -1,7 +1,7 @@
-import 'package:app/view/root/calendar/calendar.dart';
-import 'package:app/view/root/home/home.dart';
 import 'package:flutter/material.dart';
-import 'package:pie_chart/pie_chart.dart';
+import 'package:app/view/root/home/home.dart';
+import 'package:app/view/root/calendar/calendar.dart';
+import 'package:go_router/go_router.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -29,6 +29,7 @@ class _RootScreenState extends State<RootScreen> {
           // -- main content --
           // -- bottomFloatNavigationBar --
           _BottomFloatNavigationBar(
+            currentTab: _selectTab,
             onChangePage: handleNavigationFloatBottomBar,
           ),
           // -- bottomFloatNavigationBar --
@@ -39,10 +40,36 @@ class _RootScreenState extends State<RootScreen> {
 }
 
 class _BottomFloatNavigationBar extends StatelessWidget {
-  const _BottomFloatNavigationBar({required this.onChangePage, super.key});
+  const _BottomFloatNavigationBar({
+    required this.currentTab,
+    required this.onChangePage,
+    super.key,
+  });
   final Function(String tab) onChangePage;
+  final int currentTab;
+
+  _manageNote(BuildContext context) {
+    context.go('/root/manageNote');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Map<String, Map<String, dynamic>> pageButtons = {
+      'home': {
+        'icon': Icons.home,
+        'label': 'Home',
+        'onPressed': () => onChangePage('home'),
+        'isActive': currentTab == 0,
+      },
+
+      'calendar': {
+        'icon': Icons.calendar_month,
+        'label': 'Calendar',
+        'onPressed': () => onChangePage('calendar'),
+        'isActive': currentTab == 1,
+      },
+    };
+
     return Positioned(
       left: 20,
       right: 20,
@@ -63,15 +90,19 @@ class _BottomFloatNavigationBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            IconButton(
-              onPressed: () => onChangePage('home'),
-              icon: const Icon(Icons.home),
-            ),
-            IconButton(
-              onPressed: () => onChangePage('calendar'),
-              icon: const Icon(Icons.calendar_month),
-            ),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
+            ...pageButtons.entries.map((entry) {
+              final pageName = entry.key;
+              final Map<String, dynamic> buttonData = entry.value;
+
+              return IconButton(
+                onPressed: buttonData['onPressed'],
+                icon: Icon(
+                  buttonData['icon'],
+                  color: buttonData['isActive'] ? Colors.blue : Colors.grey,
+                ),
+              );
+            }),
+            IconButton(onPressed: () => _manageNote(context), icon: const Icon(Icons.add)),
           ],
         ),
       ),

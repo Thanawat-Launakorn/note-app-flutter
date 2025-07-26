@@ -1,10 +1,10 @@
-import 'package:app/view/login/register.dart';
-import 'package:app/view/root/home/info/camera/camera.dart';
-import 'package:app/view/root/home/info/info.dart';
-import 'package:app/view/root/root.dart';
 import 'package:app/view/login/login.dart';
+import 'package:app/view/root/root.dart';
 import 'package:go_router/go_router.dart';
-import '../main.dart' as main;
+import 'package:app/view/login/register.dart';
+import 'package:app/view/note/manageNote.dart';
+import 'package:app/view/root/home/info/info.dart';
+import 'package:app/view/root/home/info/camera/camera.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -23,6 +23,10 @@ class AppRouter {
                 builder: (context, state) => CameraScreen(),
               ),
             ],
+          ),
+          GoRoute(
+            path: 'manageNote',
+            builder: (context, state) => ManageNodeScreen(),
           ),
         ],
       ),
