@@ -7,5 +7,7 @@ final class RegisterInitial extends RegisterState {}
 class isLoading extends RegisterState {}
 
 class responseData extends RegisterState {}
-
-class responseError extends RegisterState {}
+class responseError extends RegisterState {
+  final dynamic payload;
+  responseError({required this.payload});
+}

@@ -1,11 +1,11 @@
-import 'package:app/common_widget/alert_error_dialog.dart';
-import 'package:app/cubit/register/register_cubit.dart';
+import 'package:app/helpers/response_api.dart';
+import 'package:app/shared/path.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:app/common_widget/button.dart';
-import 'package:app/common_widget/keyboard_dismiss.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app/common_widget/common_widget.dart';
+import 'package:app/cubit/register/register_cubit.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -32,27 +32,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  void onSubmitHandler() {
+  void onSubmitHandler(BuildContext context) {
     if (_form.currentState!.validate()) {
-      final username = _fieldForm['username']['controller'].text;
-      final password = _fieldForm['password']['controller'].text;
-      final cpassword = _fieldForm['cpassword']['controller'].text;
+      setState(() {
+        isLoadingAPI = true;
+      });
+      final String username = _fieldForm['username']['controller'].text;
+      final String password = _fieldForm['password']['controller'].text;
+      final String cpassword = _fieldForm['cpassword']['controller'].text;
 
       if (password == cpassword) {
+        debugPrint('password is match');
+        final endpoint = '$localpath/users/fill-in-registration';
+        final body = {'username': username, 'password': password};
+        final request = { endpoint: endpoint, body: body} as FetchAPI;
+        context.read<RegisterCubit>().postRegister(request);
+      } else if (password != cpassword) {
+        final payload = {'message_en': 'password not match!'};
         setState(() {
-          isLoadingAPI = true;
+          isLoadingAPI = false;
         });
-        final endpoint = '';
-        final body = {
-          'email': _fieldForm['username']['controller'].text,
-          'password': _fieldForm['password']['controller'].text,
-        };
-
-        context.read<RegisterCubit>().postRegister(
-          endpoint: endpoint,
-          body: body,
-        );
-      } else {}
+        debugPrint('password not match');
+        AlertErrorDialog.show(context, payload);
+      } else {
+        setState(() {
+          isLoadingAPI = false;
+        });
+      }
     }
   }
 
@@ -83,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             },
             validator: (value) {
               if (value!.isEmpty) {
-                return 'enter your email id';
+                return 'enter your username';
               } else {
                 return null;
               }
@@ -91,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.email),
-              hintText: 'Enter Email ID',
+              hintText: 'Enter Username',
             ),
           ),
           const SizedBox(height: 10),
@@ -103,6 +109,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FocusScope.of(
                 context,
               ).requestFocus(_fieldForm['cpassword']['focus']);
+            },
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'enter your password';
+              } else {
+                return null;
+              }
             },
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
             decoration: InputDecoration(
@@ -125,6 +138,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textInputAction: TextInputAction.done,
             controller: _fieldForm['cpassword']['controller'],
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+            validator: (v) {
+              if (v!.isEmpty) {
+                return 'enter you re-enter password';
+              } else {
+                return null;
+              }
+            },
             decoration: InputDecoration(
               hintText: 'Re-Enter Password',
               prefixIcon: Icon(Icons.replay),
@@ -140,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           Button(
             title: 'Sign Up',
-            onTap: onSubmitHandler,
+            onTap: () => onSubmitHandler(context),
             margin: const EdgeInsets.only(top: 36, bottom: 24),
           ),
           RichText(
@@ -171,11 +191,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: KeyboardDismiss(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 64, left: 24, right: 24),
-          child: _formUI(),
+    return BlocListener<RegisterCubit, RegisterState>(
+      listener: (context, state) {
+        if (state is responseData) {
+          return context.go('/root');
+        } else if (state is responseError) {
+          final payload = state.payload;
+          setState(() {
+            isLoadingAPI = false;
+          });
+
+          AlertErrorDialog.show(context, payload);
+        }
+      },
+      child: LoadingScreen(
+        isLoading: isLoadingAPI,
+        child: BlocListener<RegisterCubit, RegisterState>(
+          listener: (context, state) {
+            if (state is responseData) {
+              context.go('/root');
+            } else if (state is responseError) {
+              setState(() {
+                isLoadingAPI = false;
+              });
+              final payload = state.payload;
+              AlertErrorDialog.show(context, payload);
+            }
+          },
+          child: Scaffold(
+            body: KeyboardDismiss(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 64, left: 24, right: 24),
+                child: _formUI(),
+              ),
+            ),
+          ),
         ),
       ),
     );

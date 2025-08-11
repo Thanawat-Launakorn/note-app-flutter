@@ -1,13 +1,12 @@
-import 'package:app/cubit/login/login_cubit.dart';
+import 'package:app/shared/path.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:app/common_widget/button.dart';
+import 'package:app/helpers/response_api.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app/cubit/login/login_cubit.dart';
 import 'package:app/helpers/shared_preference.dart';
-import 'package:app/common_widget/loading_screen.dart';
-import 'package:app/common_widget/keyboard_dismiss.dart';
-import 'package:app/common_widget/alert_error_dialog.dart';
+import 'package:app/common_widget/common_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,10 +24,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _hidePassword = false;
   bool _rememberMe = false;
   bool isLoadingAPI = false;
+  String _loginOption = 'username';
 
   @override
   void initState() {
-    checkRemember();
+    initApp();
     super.initState();
   }
 
@@ -39,6 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
       value['focus'].dispose();
     });
     super.dispose();
+  }
+
+  initApp() async {
+    //  await checkRemember();
   }
 
   checkRemember() async {
@@ -54,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _fieldForm['username']['controller'].text = username;
       _fieldForm['password']['controller'].text = password;
 
-      onSubmitHandler(context);
+      onSubmitHandler();
     }
   }
 
@@ -64,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void onSubmitHandler(BuildContext context) {
+  void onSubmitHandler() {
     isLoading(true);
 
     final username =
@@ -73,15 +77,16 @@ class _LoginScreenState extends State<LoginScreen> {
         (_fieldForm['password']['controller'] as TextEditingController).text;
 
     if (username.isNotEmpty && password.isNotEmpty) {
-      final String endpoint = 'http://localhost:3000/users/fill-in-username';
+      final String endpoint = '$localpath/users/fill-in-username';
       final Map<dynamic, dynamic> body = {
         'username': username,
         'password': password,
       };
-      context.read<LoginCubit>().postLogin(endpoint: endpoint, body: body);
+      final FetchAPI request = FetchAPI(endpoint: endpoint, body: body);
+      context.read<LoginCubit>().postLogin(request);
     } else {
       isLoading(false);
-      AlertErrorDialog.show(context, '400', 'wrong username wrong password');
+      AlertErrorDialog.show(context, {});
     }
 
     // if success go to root
@@ -134,39 +139,33 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(height: 120),
             Column(
               children: [
-                TextFormField(
-                  controller: username['controller'],
-                  focusNode: username['focus'],
+                Input(
+                  fieldForm: username,
+                  hintText: 'Username',
+                  prefixIcon: Icon(Icons.person),
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (v) {
                     FocusScope.of(context).requestFocus(password['focus']);
                   },
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person),
-                    hintText: 'Username',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: password['controller'],
-                  focusNode: password['focus'],
-                  textInputAction: TextInputAction.done,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                  obscureText: _hidePassword,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      onPressed: onToggleEye,
-                      icon: Icon(
-                        _hidePassword
-                            ? Icons.visibility_off
-                            : Icons.remove_red_eye,
-                      ),
+                const SizedBox(height: 10),
+                Input(
+                  fieldForm: password,
+                  hintText: 'Password',
+                  prefixIcon: Icon(Icons.lock),
+                  obscureText: true,
+                  suffixIcon: IconButton(
+                    onPressed: onToggleEye,
+                    icon: Icon(
+                      _hidePassword
+                          ? Icons.visibility_off
+                          : Icons.remove_red_eye,
                     ),
-                    hintText: 'Password',
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -205,7 +204,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Button(title: 'Login', onTap: () => onSubmitHandler(context)),
+                Button(title: 'Login', onTap: () => onSubmitHandler()),
+
                 const SizedBox(height: 24),
                 RichText(
                   text: TextSpan(
@@ -236,16 +236,49 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     return BlocListener<LoginCubit, LoginState>(
-      listener: (context, state) {},
+      listener: (context, state) {
+        final success = state is LoginSuccess;
+        final failure = state is LoginError;
+        if (success) {
+          context.go('/root');
+        } else if (failure) {
+          final payload = state.payload;
+          isLoading(false);
+
+          _fieldForm['username']['controller'].text = '';
+          _fieldForm['password']['controller'].text = '';
+
+          AlertErrorDialog.show(context, payload);
+        }
+      },
       child: LoadingScreen(
         isLoading: isLoadingAPI,
         child: Scaffold(
-          body: KeyboardDismiss(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 64, right: 24, left: 24),
-              child: buildForm(),
-            ),
-          ),
+          appBar:
+              _loginOption == 'pincode'
+                  ? AppBar(title: Text('pincode login'))
+                  : null,
+          body:
+              _loginOption == 'pincode'
+                  ? Pincode(
+                    onSubmitHandler: (v) {},
+                    onLoginUsername: () {
+                      debugPrint('onLoginUsername');
+                      setState(() {
+                        _loginOption = 'username';
+                      });
+                    },
+                  )
+                  : KeyboardDismiss(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(
+                        top: 64,
+                        right: 24,
+                        left: 24,
+                      ),
+                      child: buildForm(),
+                    ),
+                  ),
         ),
       ),
     );

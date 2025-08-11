@@ -3,23 +3,20 @@ import 'package:app/common_widget/button.dart';
 
 class AlertErrorDialog extends StatelessWidget {
   const AlertErrorDialog({
-    required this.responseStatus,
+    required this.payload,
     required this.context,
-    required this.message,
     super.key,
   });
   final BuildContext context;
-  final String message;
-  final String responseStatus;
+  final dynamic payload;
 
-  static show(BuildContext context, String responseStatus, String message) =>
+  static show(BuildContext context, dynamic payload) =>
       showDialog(
         context: context,
         builder:
             (context) => AlertErrorDialog(
-              responseStatus: responseStatus,
               context: context,
-              message: message,
+              payload: payload,
             ),
       );
 
@@ -58,7 +55,7 @@ class AlertErrorDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    manageTitle(responseStatus),
+                    manageTitle(payload['status'] ?? '404'),
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -66,7 +63,7 @@ class AlertErrorDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Text(message),
+            Text(payload['message_en'] ?? 'not found'),
             const SizedBox(height: 10),
 
             Row(
